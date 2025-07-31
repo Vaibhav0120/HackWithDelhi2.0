@@ -27,8 +27,8 @@ class GlassButton extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             width: isFullWidth ? double.infinity : null,
-            height: isFullWidth ? 80 : 120,
-            padding: const EdgeInsets.all(20),
+            height: isFullWidth ? 50 : 90, // Further reduced from 60 and 100
+            padding: EdgeInsets.all(isFullWidth ? 8 : 12), // Further reduced padding
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
@@ -50,30 +50,35 @@ class GlassButton extends StatelessWidget {
                     children: [
                       Icon(
                         icon,
-                        size: 24,
+                        size: 16, // Further reduced from 18
                         color: Colors.white,
                       ),
-                      const SizedBox(width: 12),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 11, // Further reduced from 13
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          Text(
-                            subtitle,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.7),
+                            const SizedBox(height: 1), // Reduced spacing
+                            Text(
+                              subtitle,
+                              style: TextStyle(
+                                fontSize: 9, // Further reduced from 10
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   )
@@ -82,27 +87,29 @@ class GlassButton extends StatelessWidget {
                     children: [
                       Icon(
                         icon,
-                        size: 32,
+                        size: 28, // Reduced from 32
                         color: Colors.white,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8), // Reduced spacing
                       Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 14, // Reduced
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                         textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         subtitle,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11, // Reduced
                           color: Colors.white.withValues(alpha: 0.7),
                         ),
                         textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),

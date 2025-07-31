@@ -39,65 +39,86 @@ class HomeScreen extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Top spacer
+                const Spacer(flex: 2),
+                
                 // App Title
-                Container(
-                  margin: const EdgeInsets.only(bottom: 80),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.search,
-                        size: 80,
-                        color: Theme.of(context).colorScheme.primary,
+                Column(
+                  children: [
+                    Icon(
+                      Icons.search,
+                      size: 80,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'ToolFinder AI',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'ToolFinder AI',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Detect tools with AI-powered vision',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Detect tools with AI-powered vision',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
                 
-                // Take Photo Button
-                GlassButton(
-                  onPressed: () => _pickImage(context, ImageSource.camera),
-                  icon: Icons.camera_alt,
-                  title: 'Take Photo',
-                  subtitle: 'Capture with camera',
+                // Middle spacer
+                const Spacer(flex: 3),
+                
+                // Buttons section
+                Column(
+                  children: [
+                    // Take Photo Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: GlassButton(
+                        onPressed: () => _pickImage(context, ImageSource.camera),
+                        icon: Icons.camera_alt,
+                        title: 'Take Photo',
+                        subtitle: 'Capture with camera',
+                        isFullWidth: true,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Select from Gallery Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: GlassButton(
+                        onPressed: () => _pickImage(context, ImageSource.gallery),
+                        icon: Icons.photo_library,
+                        title: 'Select from Gallery',
+                        subtitle: 'Choose existing image',
+                        isFullWidth: true,
+                      ),
+                    ),
+                  ],
                 ),
                 
-                const SizedBox(height: 24),
+                // Bottom spacer
+                const Spacer(flex: 2),
                 
-                // Select from Gallery Button
-                GlassButton(
-                  onPressed: () => _pickImage(context, ImageSource.gallery),
-                  icon: Icons.photo_library,
-                  title: 'Select from Gallery',
-                  subtitle: 'Choose existing image',
-                ),
-                
-                const Spacer(),
-                
-                Text(
-                  'Detects: Fire Extinguisher • Tool Box • Oxygen Tank',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.5),
+                // Footer text
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Text(
+                    'Detects: Fire Extinguisher • Tool Box • Oxygen Tank',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
                   ),
                 ),
               ],
