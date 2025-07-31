@@ -37,7 +37,7 @@ After training and evaluation, the model achieved:
 ```bash
 
 HackWithDelhi2.0/
-┣ 📁 data/              ← ⚠️ Copy this folder manually (see note below)
+┣ 📁 data/              ← ⚠️ Copy this folder manually from Dataset (see below section)
 ┃ ┣ 📁 train/
 ┃ ┃ ┣ 📁 images/
 ┃ ┃ ┗ 📁 labels/
@@ -51,7 +51,12 @@ HackWithDelhi2.0/
 ┣ 📁 runs/              ← YOLO training logs and result artifacts
 ┣ 📜 Train\_YOLOv8.ipynb ← 📓 Full notebook: training, predicting & exporting
 ┣ 📜 train.py           ← 🔁 Training script (alternative to notebook)
-┣ 📜 predict.py         ← 🧠 Run inference using trained model
+┣ 📜 predict.py
+┣ 📜 visualize.py       ← If used for metrics/image display
+┣ 📜 yolo_params.yaml   ← Config file if used
+┣ 📜 yolov8m.pt         ← Trained model weights
+┣ 📜 best.onnx          ← Model Exported as ONNX
+┣ 📜 BuildWithDelhi2.0_Report.pdf ← Final report
 ┗ 📜 README.md          ← 📄 You're here!
 
 ```
