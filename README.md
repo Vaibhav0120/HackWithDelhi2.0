@@ -109,10 +109,12 @@ Sample training images used by YOLOv8 (`train_batch1.jpg`) showing bounding boxe
 
 ![Training Batch](runs/detect/train/train_batch1.jpg)
 
-### 🔹 Inference Sample
-A real inference result from our `best.onnx` model on a test image (`bus.jpg`):
+## 📊 Training Metrics
 
-![Inference Example](bus.jpg)
+The following plot summarizes the training progress over 50 epochs, including loss curves and accuracy metrics such as precision, recall, and mean Average Precision (mAP):
+
+![Training Results](runs/detect/train/results.png)
+
 
 > All these visuals are automatically generated and stored in the `runs/detect/train/` directory after training.
 
