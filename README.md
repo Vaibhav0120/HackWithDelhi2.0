@@ -27,7 +27,6 @@ After training and evaluation, the model achieved:
 | **Overall**      | 0.986     | 0.898  | **0.942** | **0.884** |
 
 > ✅ Model: `YOLOv8m`  
-> ✅ GPU: NVIDIA GeForce RTX 4050 (6GB)  
 > ✅ Framework: PyTorch + Ultralytics + ONNX
 
 ---
