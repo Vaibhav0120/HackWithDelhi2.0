@@ -5,7 +5,9 @@ This repository contains our solution for the BuildWithIndia 2.0 Hackathon organ
 ---
 
 **👥 Team**
+
 Team Name: **Codies**
+
 Hackathon: **BuildWithIndia 2.0 (SunHacks) – Duality AI Challenge**
 
 **Team Leader:**
