@@ -60,15 +60,16 @@ HackWithDelhi2.0/
 
 ## 📦 Dataset
 
-The dataset used in this project is not included in this GitHub repo due to its size (\~3.9GB).
-Please download it from this link:
+The dataset used in this project is not included in this GitHub repo due to its size (~3.9 GB).  
+Please download it from the official source:
 
-🔗 **[Download Dataset (Google Drive)](https://drive.google.com/file/d/1Ok7KHy4YqOVjZhRWr56Lg0RvmvNfzMYj/view?usp=sharing)**
+🔗 **[Download from Duality (Account Required)](https://falcon.duality.ai/secure/documentation/hackathon?utm_source=hackathon&utm_medium=instructions&utm_campaign=sunhacks)**
 
-Once downloaded:
+### 📂 After Downloading:
 
-* Copy the extracted `data/` folder into the root directory of this repo.
-* Structure must contain: `train/`, `val/`, `predict/` folders with images + labels + `data.yaml`.
+1. Extract the contents.
+2. Copy the entire `data/` folder into the root directory of this repo.
+3. Ensure the folder structure looks like this:
 
 ---
 
