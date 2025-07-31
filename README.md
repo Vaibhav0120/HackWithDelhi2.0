@@ -4,6 +4,24 @@ This repository contains our solution for the BuildWithIndia 2.0 Hackathon organ
 
 ---
 
+**👥 Team**
+Team Name: **Codies**
+Hackathon: **BuildWithIndia 2.0 (SunHacks) – Duality AI Challenge**
+
+**Team Leader:**
+
+Samarth Sharma – samarth120904@gmail.com
+
+**Team Members:**
+
+Vaibhav Sharma – vaibhavsh0120@gmail.com
+
+Prithvi Singh – prithvis3804@gmail.com
+
+Parth Garg – 2300300100120@ipec.org.in
+
+---
+
 ## 🚀 Project Overview
 
 The aim of this project is to ensure workplace safety using real-time object detection of essential equipment. By leveraging YOLOv8 and ONNX, our solution can run across various platforms — and is optimized for Flutter (mobile) integration.
