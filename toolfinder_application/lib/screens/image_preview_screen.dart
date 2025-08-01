@@ -184,12 +184,12 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withValues(alpha: 0.4),
                             blurRadius: 25,
                             offset: const Offset(0, 15),
                           ),
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                             blurRadius: 40,
                             spreadRadius: 5,
                           ),
@@ -271,16 +271,16 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: isError 
-            ? Theme.of(context).colorScheme.tertiary.withOpacity(0.1)
+            ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1)
             : isLoading 
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
-                : Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
         border: Border.all(
           color: isError 
-              ? Theme.of(context).colorScheme.tertiary.withOpacity(0.3)
+              ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.3)
               : isLoading 
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
-                  : Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                  : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
@@ -289,7 +289,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                 ? Theme.of(context).colorScheme.tertiary
                 : isLoading 
                     ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.secondary).withOpacity(0.2),
+                    : Theme.of(context).colorScheme.secondary).withValues(alpha: 0.2),
             blurRadius: 15,
             spreadRadius: 2,
           ),
@@ -344,7 +344,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
             Text(
               'Error: ${_inference.initError!}',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.tertiary.withOpacity(0.8),
+                color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.8),
                 fontSize: 16,
               ),
             ),
@@ -352,7 +352,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
             Text(
               'Please ensure best.onnx (opset 13) is in the assets folder and properly configured.',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.tertiary.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.7),
                 fontSize: 14,
               ),
             ),
@@ -389,17 +389,17 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
         borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.2),
-            Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+            Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
           ],
         ),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             spreadRadius: 2,
           ),
@@ -436,7 +436,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                 'Analyzing objects with YOLOv8',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
             ],

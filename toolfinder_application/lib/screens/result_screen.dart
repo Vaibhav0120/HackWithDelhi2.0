@@ -55,13 +55,13 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(20.0), // Reduced from 24.0 to 20.0
             child: Column(
               children: [
                 // Enhanced Results Summary
                 _buildResultsSummary(),
                 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20), // Reduced from 24 to 20
                 
                 // Enhanced Image with Bounding Boxes
                 Expanded(
@@ -73,13 +73,13 @@ class _ResultScreenState extends State<ResultScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withValues(alpha: 0.4),
                             blurRadius: 25,
                             offset: const Offset(0, 15),
                           ),
                           if (widget.detections.isNotEmpty)
                             BoxShadow(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                               blurRadius: 40,
                               spreadRadius: 5,
                             ),
@@ -106,7 +106,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24), // Reduced from 32 to 24
                 
                 // Enhanced Action Buttons
                 Row(
@@ -119,9 +119,10 @@ class _ResultScreenState extends State<ResultScreen> {
                         icon: Icons.refresh_rounded,
                         title: 'New Scan',
                         subtitle: 'Analyze another',
+                        isCompactMode: true, // Add this parameter
                       ),
                     ),
-                    const SizedBox(width: 20),
+                    const SizedBox(width: 16), // Reduced from 20 to 16
                     Expanded(
                       child: GlassButton(
                         onPressed: () {
@@ -133,6 +134,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         icon: Icons.home_rounded,
                         title: 'Mission Control',
                         subtitle: 'Return home',
+                        isCompactMode: true, // Add this parameter
                       ),
                     ),
                   ],
@@ -156,22 +158,22 @@ class _ResultScreenState extends State<ResultScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               width: 1.5,
             ),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.05),
+                Colors.white.withValues(alpha: 0.15),
+                Colors.white.withValues(alpha: 0.05),
               ],
             ),
             boxShadow: [
               BoxShadow(
                 color: widget.detections.isNotEmpty 
-                    ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                    : Colors.grey.withOpacity(0.1),
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
+                    : Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 15,
                 spreadRadius: 2,
               ),
@@ -188,8 +190,8 @@ class _ResultScreenState extends State<ResultScreen> {
                   gradient: RadialGradient(
                     colors: [
                       widget.detections.isNotEmpty 
-                          ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
-                          : Colors.grey.withOpacity(0.3),
+                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                          : Colors.grey.withValues(alpha: 0.3),
                       Colors.transparent,
                     ],
                   ),
@@ -232,7 +234,7 @@ class _ResultScreenState extends State<ResultScreen> {
                           : _getDetectionSummary(),
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -283,14 +285,14 @@ class _ResultScreenState extends State<ResultScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                 ),
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.white.withOpacity(0.15),
-                    Colors.white.withOpacity(0.05),
+                    Colors.white.withValues(alpha: 0.15),
+                    Colors.white.withValues(alpha: 0.05),
                   ],
                 ),
               ),
@@ -334,7 +336,7 @@ class _ResultScreenState extends State<ResultScreen> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                         ),
                         child: Row(
                           children: [
