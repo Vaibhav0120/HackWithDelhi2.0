@@ -110,17 +110,9 @@ lib/
 ### 📊 Expected Performance
 - **Inference Time**: ~200-500ms on mobile CPU
 - **Memory Usage**: ~200-300MB during inference
-- **Accuracy**: Depends on training data quality and model variant
+- **Accuracy**: 94.5%
 - **Supported Formats**: JPEG, PNG, WebP images
 - **Detection Quality**: High-confidence detections (>50%) with aggressive NMS filtering
-
-### 🔄 Recent Updates
-- **✅ Fixed Detection Issues**: Updated confidence threshold from 0.25 to 0.5
-- **✅ Improved NMS**: More aggressive IoU threshold (0.4 → 0.3)
-- **✅ Added Detection Limits**: Maximum 10 detections per image
-- **✅ Enhanced Filtering**: Better size and coordinate validation
-- **✅ UI Fixes**: Resolved glass button overflow issues
-- **✅ Better Logging**: Comprehensive detection pipeline logging
 
 ### 🎯 Detection Quality Improvements
 - **Higher Precision**: Only objects with >50% confidence are detected
@@ -128,3 +120,4 @@ lib/
 - **Size Filtering**: Minimum 10px width/height requirement
 - **Coordinate Validation**: Ensures all detections are within image bounds
 - **Performance Optimized**: Limited to top 10 highest confidence detections
+

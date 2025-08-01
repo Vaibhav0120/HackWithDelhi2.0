@@ -139,8 +139,34 @@ The following plot summarizes the training progress over 50 epochs, including lo
 
 ![Training Results](runs/detect/train/results.png)
 
-
 > All these visuals are automatically generated and stored in the `runs/detect/train/` directory after training.
+
+## 🖼️ ToolFinder App Screenshots (BONUS)
+
+This mobile interface demonstrates real-time object detection using the trained YOLOv8 ONNX model inside a modern Flutter app.
+
+| Home Screen                   | Image Preview                       | Detection Result                  |
+| ----------------------------- | ----------------------------------- | --------------------------------- |
+| ![Home](Screenshots\Home Screen.jpg) | ![Preview](Screenshots\Preview Screen.jpg) | ![Result](Screenshots\Result Screen.jpg) |
+
+**Features shown above:**
+
+* 🚀 Smooth glassmorphism interface with dark mode UI
+* 📸 Capture from camera or select from gallery
+* 🧠 On-device ONNX inference (single image at a time)
+* 🎯 High-confidence bounding boxes using post-processing and NMS
+
+> ToolFinder turns your phone into an **AI vision assistant** capable of real-time object detection — ideal for industrial, robotics, and even space applications.
+
+### 📦 Download APK (Android Release)
+
+You can try the ToolFinder AI app on your Android device:
+
+🔗 **[📥 Download ToolFinder Release APK](toolfinder_application/build/app/outputs/flutter-apk/Tool%20Finder%20Release.apk)**
+
+> Built with Flutter • ONNX Runtime for mobile inference • Optimized for low-latency object detection
+
+⚠️ Make sure to enable **"Install from Unknown Sources"** in your device settings.
 
 
 
