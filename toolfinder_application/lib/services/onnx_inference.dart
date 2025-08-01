@@ -342,27 +342,27 @@ class OnnxInference {
   // Process each anchor point
   for (int anchor = 0; anchor < numAnchors; anchor++) {
     // Extract values for this anchor
-    final x_center = batch[0][anchor];
-    final y_center = batch[1][anchor];
+    final xCenter = batch[0][anchor];
+    final yCenter = batch[1][anchor];
     final width = batch[2][anchor];
     final height = batch[3][anchor];
     
     // Get class scores (features 4, 5, 6 for our 3 classes)
-    final class0_score = batch[4][anchor];
-    final class1_score = batch[5][anchor];
-    final class2_score = batch[6][anchor];
+    final class0Score = batch[4][anchor];
+    final class1Score = batch[5][anchor];
+    final class2Score = batch[6][anchor];
     
     // Find the class with highest score
-    double maxScore = class0_score;
+    double maxScore = class0Score;
     int classId = 0;
     
-    if (class1_score > maxScore) {
-      maxScore = class1_score;
+    if (class1Score > maxScore) {
+      maxScore = class1Score;
       classId = 1;
     }
     
-    if (class2_score > maxScore) {
-      maxScore = class2_score;
+    if (class2Score > maxScore) {
+      maxScore = class2Score;
       classId = 2;
     }
     
@@ -374,14 +374,14 @@ class OnnxInference {
         classId >= 0 && 
         classId < _classNames.length &&
         width > 10 && height > 10 && // Minimum size filter
-        x_center > 0 && y_center > 0 && // Valid coordinates
-        x_center < 640 && y_center < 640) {
+        xCenter > 0 && yCenter > 0 && // Valid coordinates
+        xCenter < 640 && yCenter < 640) {
       
       // Convert from center format to corner format
-      final x1 = x_center - width / 2;
-      final y1 = y_center - height / 2;
-      final x2 = x_center + width / 2;
-      final y2 = y_center + height / 2;
+      final x1 = xCenter - width / 2;
+      final y1 = yCenter - height / 2;
+      final x2 = xCenter + width / 2;
+      final y2 = yCenter + height / 2;
       
       // Ensure valid bounding box
       if (x2 > x1 && y2 > y1 && 

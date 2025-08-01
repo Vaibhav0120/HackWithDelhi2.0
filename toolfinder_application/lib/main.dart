@@ -32,8 +32,7 @@ class ToolFinderApp extends StatelessWidget {
           primary: Color(0xFF6C5CE7), // Space purple
           secondary: Color(0xFF00CEC9), // Cosmic teal
           surface: Color(0xFF1E1E2E),
-          tertiary: Color(0xFFFF7675), // Mars red
-          background: Color(0xFF0B0E1A), // Deep space
+          tertiary: Color(0xFFFF7675), // Deep space
         ),
         textTheme: const TextTheme(
           headlineLarge: TextStyle(

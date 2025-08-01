@@ -360,7 +360,7 @@ class _ResultScreenState extends State<ResultScreen> {
                           ],
                         ),
                       );
-                    }).toList(),
+                    }),
                   
                   const SizedBox(height: 24),
                   

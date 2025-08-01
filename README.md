@@ -147,7 +147,7 @@ This mobile interface demonstrates real-time object detection using the trained 
 
 | Home Screen                   | Image Preview                       | Detection Result                  |
 | ----------------------------- | ----------------------------------- | --------------------------------- |
-| ![Home](Screenshots\Home Screen.jpg) | ![Preview](Screenshots\Preview Screen.jpg) | ![Result](Screenshots\Result Screen.jpg) |
+| ![Home](Screenshots/Home Screen.jpg) | ![Preview](Screenshots/Preview Screen.jpg) | ![Result](Screenshots/Result Screen.jpg) |
 
 **Features shown above:**
 

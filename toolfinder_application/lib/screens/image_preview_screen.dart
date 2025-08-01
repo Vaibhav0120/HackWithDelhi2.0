@@ -301,7 +301,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
           Row(
             children: [
               if (isLoading) ...[
-                Container(
+                SizedBox(
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
@@ -408,7 +408,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
+          SizedBox(
             width: 28,
             height: 28,
             child: CircularProgressIndicator(

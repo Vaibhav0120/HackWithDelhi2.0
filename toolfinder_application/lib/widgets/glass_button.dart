@@ -91,7 +91,7 @@ class _GlassButtonState extends State<GlassButton> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (widget.isLoading)
-          Container(
+          SizedBox(
             width: 28,
             height: 28,
             child: CircularProgressIndicator(
@@ -145,7 +145,7 @@ class _GlassButtonState extends State<GlassButton> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (widget.isLoading)
-          Container(
+          SizedBox(
             width: 36,
             height: 36,
             child: CircularProgressIndicator(
