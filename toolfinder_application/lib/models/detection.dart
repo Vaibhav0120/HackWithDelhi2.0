@@ -17,13 +17,32 @@ class Detection {
     required this.className,
   });
 
-  double get width => x2 - x1;
-  double get height => y2 - y1;
-  double get centerX => x1 + width / 2;
-  double get centerY => y1 + height / 2;
+  factory Detection.fromMap(Map<String, dynamic> map) {
+    return Detection(
+      x1: (map['x1'] as num).toDouble(),
+      y1: (map['y1'] as num).toDouble(),
+      x2: (map['x2'] as num).toDouble(),
+      y2: (map['y2'] as num).toDouble(),
+      confidence: (map['confidence'] as num).toDouble(),
+      classId: map['classId'] as int,
+      className: map['className'] as String,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'x1': x1,
+      'y1': y1,
+      'x2': x2,
+      'y2': y2,
+      'confidence': confidence,
+      'classId': classId,
+      'className': className,
+    };
+  }
 
   @override
   String toString() {
-    return 'Detection(class: $className, confidence: ${(confidence * 100).toStringAsFixed(1)}%, bbox: [${x1.toStringAsFixed(1)}, ${y1.toStringAsFixed(1)}, ${x2.toStringAsFixed(1)}, ${y2.toStringAsFixed(1)}])';
+    return 'Detection(className: $className, confidence: ${(confidence * 100).toStringAsFixed(1)}%, bbox: [$x1, $y1, $x2, $y2])';
   }
 }

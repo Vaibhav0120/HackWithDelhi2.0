@@ -1,81 +1,47 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../services/onnx_inference.dart';
 import '../widgets/glass_button.dart';
+import '../main.dart';
 import 'result_screen.dart';
 
 class ImagePreviewScreen extends StatefulWidget {
   final String imagePath;
 
-  const ImagePreviewScreen({super.key, required this.imagePath});
+  const ImagePreviewScreen({
+    super.key,
+    required this.imagePath,
+  });
 
   @override
   State<ImagePreviewScreen> createState() => _ImagePreviewScreenState();
 }
 
 class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
-  bool _isProcessing = false;
-  bool _isInitializing = true;
-  late final OnnxInference _inference;
+  bool _isAnalyzing = false;
+  String _statusMessage = 'Ready to analyze';
 
-  @override
-  void initState() {
-    super.initState();
-    _inference = OnnxInference();
-    _initializeModel();
-  }
-
-  @override
-  void dispose() {
-    _inference.dispose();
-    super.dispose();
-  }
-
-  Future<void> _initializeModel() async {
-    try {
-      await _inference.initialize();
-      if (mounted) {
-        setState(() {
-          _isInitializing = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isInitializing = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _detectObjects() async {
-    if (_isInitializing) {
+  Future<void> _analyzeImage() async {
+    if (!ModelManager.instance.isPreloaded) {
       _showSnackBar(
-        'Neural network is still initializing...',
-        Theme.of(context).colorScheme.secondary,
-        Icons.hourglass_empty_rounded,
-      );
-      return;
-    }
-
-    if (_inference.initError != null) {
-      _showSnackBar(
-        'Neural network unavailable: ${_inference.initError!}',
+        'Neural network not ready. Please wait for model to load.',
         Theme.of(context).colorScheme.tertiary,
-        Icons.error_rounded,
+        Icons.warning_rounded,
       );
       return;
     }
 
     setState(() {
-      _isProcessing = true;
+      _isAnalyzing = true;
+      _statusMessage = 'Analyzing image...';
     });
 
     try {
-      final detections = await _inference.runInference(widget.imagePath);
+      // FUNCTIONAL: Use settings-aware inference
+      final detections = await ModelManager.instance.getInference().runInference(widget.imagePath);
       
       if (mounted) {
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
@@ -95,28 +61,28 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                 child: child,
               );
             },
-            transitionDuration: const Duration(milliseconds: 250),
+            transitionDuration: const Duration(milliseconds: 300),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+          _statusMessage = 'Analysis failed';
+        });
+        
         _showSnackBar(
-          'Detection failed: $e',
+          'Analysis failed: ${e.toString()}',
           Theme.of(context).colorScheme.tertiary,
           Icons.error_rounded,
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
       }
     }
   }
 
   void _showSnackBar(String message, Color color, IconData icon) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -141,7 +107,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Image Analysis'),
+        title: const Text('Image Preview'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -165,16 +131,15 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
-                // Status Card (without rotation animation)
-                if (_isInitializing || _inference.initError != null) ...[
-                  _buildStatusCard(),
-                  const SizedBox(height: 20),
-                ],
+                // Status Card
+                _buildStatusCard(),
                 
-                // Enhanced Image Preview
+                const SizedBox(height: 20),
+                
+                // Image Preview
                 Expanded(
                   child: Hero(
                     tag: 'image_${widget.imagePath}',
@@ -188,11 +153,6 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                             blurRadius: 25,
                             offset: const Offset(0, 15),
                           ),
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                            blurRadius: 40,
-                            spreadRadius: 5,
-                          ),
                         ],
                       ),
                       child: ClipRRect(
@@ -200,58 +160,39 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                         child: Image.file(
                           File(widget.imagePath),
                           fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[900],
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.broken_image_rounded,
-                                      color: Theme.of(context).colorScheme.tertiary,
-                                      size: 64,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    const Text(
-                                      'Image loading failed',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
                         ),
                       ),
                     ),
                   ),
                 ),
                 
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
                 
-                // Enhanced Detect Button
-                SizedBox(
-                  width: double.infinity,
-                  child: _isProcessing
-                      ? _buildProcessingCard()
-                      : GlassButton(
-                          onPressed: _detectObjects,
-                          icon: Icons.radar_rounded,
-                          title: 'Analyze Objects',
-                          subtitle: _inference.initError != null 
-                              ? 'Neural network unavailable' 
-                              : _isInitializing 
-                                  ? 'Initializing neural network...' 
-                                  : 'Activate YOLOv8 Detection',
-                          isFullWidth: true,
-                        ),
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: GlassButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icons.arrow_back_rounded,
+                        title: 'Back',
+                        subtitle: 'Choose different',
+                        isCompactMode: true,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: GlassButton(
+                        onPressed: _isAnalyzing ? () {} : _analyzeImage,
+                        icon: _isAnalyzing ? Icons.hourglass_empty_rounded : Icons.search_rounded,
+                        title: _isAnalyzing ? 'Analyzing...' : 'Detect Objects',
+                        subtitle: _isAnalyzing ? 'Please wait' : 'Start analysis',
+                        isCompactMode: true,
+                        isPrimary: true,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -262,186 +203,99 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
   }
 
   Widget _buildStatusCard() {
-    final isError = _inference.initError != null;
-    final isLoading = _isInitializing;
-    
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: isError 
-            ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1)
-            : isLoading 
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-        border: Border.all(
-          color: isError 
-              ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.3)
-              : isLoading 
-                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                  : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: (isError 
-                ? Theme.of(context).colorScheme.tertiary
-                : isLoading 
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.secondary).withValues(alpha: 0.2),
-            blurRadius: 15,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (isLoading) ...[
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-              ] else if (isError) ...[
-                Icon(
-                  Icons.error_rounded,
-                  color: Theme.of(context).colorScheme.tertiary,
-                  size: 24,
-                ),
-                const SizedBox(width: 16),
-              ] else ...[
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: Theme.of(context).colorScheme.secondary,
-                  size: 24,
-                ),
-                const SizedBox(width: 16),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.15),
+                Colors.white.withValues(alpha: 0.05),
               ],
-              Expanded(
-                child: Text(
-                  _inference.initStatus,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Status Icon
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      _isAnalyzing
+                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                          : ModelManager.instance.isPreloaded
+                              ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3)
+                              : Colors.grey.withValues(alpha: 0.3),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
+                child: _isAnalyzing
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        ModelManager.instance.isPreloaded
+                            ? Icons.check_circle_rounded
+                            : Icons.hourglass_empty_rounded,
+                        color: ModelManager.instance.isPreloaded
+                            ? Theme.of(context).colorScheme.secondary
+                            : Colors.grey,
+                        size: 24,
+                      ),
               ),
-            ],
-          ),
-          if (isError) ...[
-            const SizedBox(height: 16),
-            Text(
-              'Error: ${_inference.initError!}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.8),
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Please ensure best.onnx (opset 13) is in the assets folder and properly configured.',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.7),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _isInitializing = true;
-                });
-                _initializeModel();
-              },
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry Initialization'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProcessingCard() {
-    return Container(
-      height: 90,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-            Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-          ],
-        ),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 28,
-            height: 28,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 24),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Neural Network Processing...',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Analyzing objects with YOLOv8',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withValues(alpha: 0.7),
+              
+              const SizedBox(width: 16),
+              
+              // Status Text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _statusMessage,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      ModelManager.instance.isPreloaded
+                          ? 'Neural network ready for analysis'
+                          : 'Waiting for neural network...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/detection.dart';
 import '../widgets/bounding_box_overlay.dart';
 import '../widgets/glass_button.dart';
 import 'home_screen.dart';
+import 'image_preview_screen.dart';
 
 class ResultScreen extends StatefulWidget {
   final String imagePath;
@@ -21,6 +23,60 @@ class ResultScreen extends StatefulWidget {
 }
 
 class _ResultScreenState extends State<ResultScreen> {
+
+  // Different behaviors for the two buttons
+  Future<void> _scanNewImage() async {
+    // Take a new photo and analyze it
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      
+      if (pickedFile != null && mounted) {
+        // Replace current screen with new image preview
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                ImagePreviewScreen(imagePath: pickedFile.path),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOut,
+                )),
+                child: child,
+              );
+            },
+            transitionDuration: const Duration(milliseconds: 250),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to capture new image: $e'),
+            backgroundColor: Theme.of(context).colorScheme.tertiary,
+          ),
+        );
+      }
+    }
+  }
+
+  void _returnToHome() {
+    // Go back to home screen (mission control)
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,13 +111,13 @@ class _ResultScreenState extends State<ResultScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(20.0), // Reduced from 24.0 to 20.0
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
                 // Enhanced Results Summary
                 _buildResultsSummary(),
                 
-                const SizedBox(height: 20), // Reduced from 24 to 20
+                const SizedBox(height: 20),
                 
                 // Enhanced Image with Bounding Boxes
                 Expanded(
@@ -106,35 +162,28 @@ class _ResultScreenState extends State<ResultScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 24), // Reduced from 32 to 24
+                const SizedBox(height: 24),
                 
-                // Enhanced Action Buttons
+                // Different behaviors for the two buttons
                 Row(
                   children: [
                     Expanded(
                       child: GlassButton(
-                        onPressed: () {
-                          Navigator.of(context).popUntil((route) => route.isFirst);
-                        },
-                        icon: Icons.refresh_rounded,
+                        onPressed: _scanNewImage, // Takes new photo
+                        icon: Icons.camera_alt_rounded,
                         title: 'New Scan',
-                        subtitle: 'Analyze another',
-                        isCompactMode: true, // Add this parameter
+                        subtitle: 'Take new photo',
+                        isCompactMode: true,
                       ),
                     ),
-                    const SizedBox(width: 16), // Reduced from 20 to 16
+                    const SizedBox(width: 16),
                     Expanded(
                       child: GlassButton(
-                        onPressed: () {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (context) => const HomeScreen()),
-                            (route) => false,
-                          );
-                        },
+                        onPressed: _returnToHome, // Goes to home
                         icon: Icons.home_rounded,
-                        title: 'Mission Control',
-                        subtitle: 'Return home',
-                        isCompactMode: true, // Add this parameter
+                        title: 'Home',
+                        subtitle: 'Mission Control',
+                        isCompactMode: true,
                       ),
                     ),
                   ],
