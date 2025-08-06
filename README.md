@@ -73,7 +73,7 @@ HackWithDelhi2.0/
 ┣ 📜 Train\_YOLOv8.ipynb ← 📓 Full notebook: training, predicting & exporting
 ┣ 📜 train.py           ← 🔁 Training script (alternative to notebook)
 ┣ 📜 predict.py
-┣ 📜 visualize.py       ← If used for metrics/image display
+┣ 📜 visualize.py       ← used for metrics/image display
 ┣ 📜 yolo_params.yaml   ← Config file if used
 ┣ 📜 yolov8m.pt         ← Trained model weights
 ┣ 📜 best.onnx          ← Model Exported as ONNX
