@@ -152,6 +152,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen>
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        toolbarHeight: 48, // REDUCED from default 56 to 48
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -183,7 +184,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen>
                   
                   const SizedBox(height: 24),
                   
-                  // Action Buttons
+                  // Action Buttons - IMPROVED SIZE
                   _buildActionButtons(),
                 ],
               ),
@@ -413,12 +414,12 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen>
       children: [
         Expanded(
           child: SizedBox(
-            height: 80, // Fixed height for consistency
+            height: 96, // INCREASED from 80 to 96 for better text visibility
             child: _buildGlassButton(
               onPressed: () => Navigator.pop(context),
               icon: Icons.arrow_back_rounded,
               title: 'Back',
-              subtitle: 'Choose different',
+              subtitle: 'Choose different image',
               isPrimary: false,
             ),
           ),
@@ -426,12 +427,12 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen>
         const SizedBox(width: 16),
         Expanded(
           child: SizedBox(
-            height: 80, // Fixed height for consistency
+            height: 96, // INCREASED from 80 to 96 for better text visibility
             child: _buildGlassButton(
               onPressed: _isAnalyzing ? () {} : _analyzeImage,
               icon: _isAnalyzing ? Icons.hourglass_empty_rounded : Icons.search_rounded,
               title: _isAnalyzing ? 'Analyzing...' : 'Detect Objects',
-              subtitle: _isAnalyzing ? 'Please wait' : 'Start analysis',
+              subtitle: _isAnalyzing ? 'Please wait for results' : 'Start AI analysis',
               isPrimary: true,
             ),
           ),
@@ -510,14 +511,17 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen>
                           fontWeight: FontWeight.w500,
                           color: Colors.white,
                         ),
+                        overflow: TextOverflow.ellipsis, // PREVENT TEXT CUTOFF
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4), // INCREASED spacing
                       Text(
                         subtitle,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.7),
                         ),
+                        overflow: TextOverflow.ellipsis, // PREVENT TEXT CUTOFF
+                        maxLines: 2, // ALLOW 2 LINES FOR LONGER TEXT
                       ),
                     ],
                   ),

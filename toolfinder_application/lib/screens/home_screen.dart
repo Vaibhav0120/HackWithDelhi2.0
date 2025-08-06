@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sensors_plus/sensors_plus.dart';
+import 'dart:async';
 import '../widgets/settings_dialog.dart';
 import 'image_preview_screen.dart';
 import 'realtime_detection_screen.dart';
@@ -18,6 +20,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _particleController;
   late AnimationController _glowController;
   late List<Particle> _particles;
+
+  // Accelerometer variables
+  double _accelerometerX = 0.0;
+  double _accelerometerY = 0.0;
+  double _velocityX = 0.0;
+  double _velocityY = 0.0;
+  StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
+  
+  // Calibration variables
+  bool _isCalibrated = false;
+  double _baselineX = 0.0;
+  double _baselineY = 0.0;
+  int _calibrationSamples = 0;
+  static const int _calibrationCount = 5; // Reduced from 10 for faster response
 
   @override
   void initState() {
@@ -41,8 +57,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       vsync: this,
     )..repeat(reverse: true);
     
-    // Initialize floating particles (stars)
+    // Initialize floating particles (stars) with extended area
     _particles = List.generate(25, (index) => Particle());
+    
+    // Start accelerometer listening
+    _startAccelerometer();
+  }
+
+  void _startAccelerometer() {
+    try {
+      _accelerometerSubscription = accelerometerEventStream(
+        samplingPeriod: const Duration(milliseconds: 16), // Reduced from 50ms for faster response
+      ).listen((AccelerometerEvent event) {
+        if (!_isCalibrated) {
+          // Calibration phase - establish baseline
+          _baselineX += event.x;
+          _baselineY += event.y;
+          _calibrationSamples++;
+          
+          if (_calibrationSamples >= _calibrationCount) {
+            _baselineX /= _calibrationCount;
+            _baselineY /= _calibrationCount;
+            _isCalibrated = true;
+          }
+        } else {
+          // Apply baseline correction and update accelerometer values
+          final correctedX = event.x - _baselineX;
+          final correctedY = event.y - _baselineY;
+          
+          // Immediate response with reduced smoothing
+          _accelerometerX = _accelerometerX * 0.7 + correctedX * 0.3; // Reduced smoothing from 0.9/0.1
+          _accelerometerY = _accelerometerY * 0.7 + correctedY * 0.3;
+          
+          // Update velocity with momentum
+          const sensitivity = 0.08; // Increased slightly from 0.05 for better response
+          _velocityX = (_velocityX * 0.92) + (_accelerometerX * sensitivity); // Reduced damping from 0.95
+          _velocityY = (_velocityY * 0.92) + (-_accelerometerY * sensitivity); // Inverted Y for natural feel
+          
+          // Cap velocity to prevent extreme movements
+          _velocityX = _velocityX.clamp(-2.0, 2.0); // Increased from 1.5 for better range
+          _velocityY = _velocityY.clamp(-2.0, 2.0);
+        }
+      });
+    } catch (e) {
+      // Fallback: mark as calibrated to prevent blocking
+      _isCalibrated = true;
+    }
   }
 
   @override
@@ -50,6 +110,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _rotationController.dispose();
     _particleController.dispose();
     _glowController.dispose();
+    _accelerometerSubscription?.cancel();
     super.dispose();
   }
 
@@ -175,13 +236,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Animated Background Grid (subtle)
+          // Animated Background Grid (subtle) - NO accelerometer influence
           _buildBackgroundGrid(),
           
-          // Floating Particles (Stars)
+          // Floating Particles (Stars) - WITH accelerometer influence
           _buildFloatingParticles(),
           
-          // Animated Glow Effects
+          // Animated Glow Effects - NO accelerometer influence
           _buildGlowEffects(),
           
           // Main Content
@@ -268,24 +329,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return Stack(
           children: _particles.map((particle) {
             final progress = _particleController.value;
-            final yOffset = math.sin(progress * 2 * math.pi + particle.phase) * 20;
+            final baseYOffset = math.sin(progress * 2 * math.pi + particle.phase) * 20;
+            
+            // Apply accelerometer influence only if calibrated
+            final accelerometerInfluence = _isCalibrated ? 15.0 : 0.0;
+            final accelerometerXOffset = _velocityX * accelerometerInfluence * particle.sensitivity;
+            final accelerometerYOffset = _velocityY * accelerometerInfluence * particle.sensitivity;
+            
+            // Calculate final position with extended area (120% of screen)
+            final screenWidth = MediaQuery.of(context).size.width;
+            final screenHeight = MediaQuery.of(context).size.height;
+            final extendedWidth = screenWidth * 1.2;
+            final extendedHeight = screenHeight * 1.2;
+            
+            final finalX = (particle.x * extendedWidth) - (extendedWidth - screenWidth) / 2 + accelerometerXOffset;
+            final finalY = (particle.y * extendedHeight) - (extendedHeight - screenHeight) / 2 + baseYOffset + accelerometerYOffset;
+            
+            // Enhanced visual effects based on movement
+            final movementIntensity = (math.sqrt(_velocityX * _velocityX + _velocityY * _velocityY) * 0.5).clamp(0.0, 1.0);
+            final dynamicOpacity = (particle.opacity + movementIntensity * 0.3).clamp(0.0, 1.0);
+            final dynamicSize = particle.size + movementIntensity * 1.0;
             
             return Positioned(
-              left: particle.x * MediaQuery.of(context).size.width,
-              top: particle.y * MediaQuery.of(context).size.height + yOffset,
-              child: Container(
-                width: particle.size,
-                height: particle.size,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: particle.opacity),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.white.withValues(alpha: particle.opacity * 0.5),
-                      blurRadius: 2,
-                      spreadRadius: 0.5,
-                    ),
-                  ],
+              left: finalX,
+              top: finalY,
+              child: Transform.rotate(
+                angle: progress * 2 * math.pi * particle.sensitivity,
+                child: Container(
+                  width: dynamicSize,
+                  height: dynamicSize,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: dynamicOpacity),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withValues(alpha: dynamicOpacity * 0.5),
+                        blurRadius: 2 + movementIntensity * 2,
+                        spreadRadius: 0.5 + movementIntensity * 0.5,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -794,13 +877,15 @@ class Particle {
   final double phase;
   final double size;
   final double opacity;
+  final double sensitivity;
 
   Particle()
       : x = math.Random().nextDouble(),
         y = math.Random().nextDouble(),
         phase = math.Random().nextDouble() * 2 * math.pi,
-        size = 2.0 + (math.Random().nextDouble() * 3.0), // Variable star sizes
-        opacity = 0.1 + (math.Random().nextDouble() * 0.3); // Variable opacity
+        size = 1.5 + (math.Random().nextDouble() * 2.5), // Match splash screen size
+        opacity = 0.1 + (math.Random().nextDouble() * 0.3),
+        sensitivity = 0.5 + (math.Random().nextDouble() * 0.5); // Variable sensitivity
 }
 
 class GridPainter extends CustomPainter {

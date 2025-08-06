@@ -121,6 +121,7 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        toolbarHeight: 48, // REDUCED from default 56 to 48
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -158,7 +159,7 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
                   
                   const SizedBox(height: 24),
                   
-                  // Action Buttons
+                  // Action Buttons - IMPROVED SIZE
                   _buildActionButtons(),
                 ],
               ),
@@ -413,24 +414,24 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
       children: [
         Expanded(
           child: SizedBox(
-            height: 80, // Fixed height for consistency
+            height: 96, // INCREASED from 80 to 96 for better text visibility
             child: _buildGlassButton(
               onPressed: _scanNewImage,
               icon: Icons.camera_alt_rounded,
               title: 'New Scan',
-              subtitle: 'Take new photo',
+              subtitle: 'Take another photo',
             ),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: SizedBox(
-            height: 80, // Fixed height for consistency
+            height: 96, // INCREASED from 80 to 96 for better text visibility
             child: _buildGlassButton(
               onPressed: _returnToHome,
               icon: Icons.home_rounded,
               title: 'Home',
-              subtitle: 'Mission Control',
+              subtitle: 'Return to Mission Control',
             ),
           ),
         ),
@@ -500,14 +501,17 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
                           fontWeight: FontWeight.w500,
                           color: Colors.white,
                         ),
+                        overflow: TextOverflow.ellipsis, // PREVENT TEXT CUTOFF
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4), // INCREASED spacing
                       Text(
                         subtitle,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.7),
                         ),
+                        overflow: TextOverflow.ellipsis, // PREVENT TEXT CUTOFF
+                        maxLines: 2, // ALLOW 2 LINES FOR LONGER TEXT
                       ),
                     ],
                   ),
