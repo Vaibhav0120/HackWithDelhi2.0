@@ -147,8 +147,11 @@ The following plot summarizes the training progress over 50 epochs, including lo
 This mobile interface demonstrates real-time object detection using the trained YOLOv8 ONNX model inside a modern Flutter app.
 
 | Home Screen                   | Image Preview                       | Detection Result                  |
-| ----------------------------- | ----------------------------------- | --------------------------------- |
+| ----------------------------- | ----------------------------------- | ---------------------------------- |
 | ![Home](Screenshots/home-screen.jpg) | ![Preview](Screenshots/preview-screen.jpg) | ![Result](Screenshots/result-screen.jpg) |
+| Live Detection                | Settings Threshold                       | Settings Object                  |
+| ![Live Detection](Screenshots/live-detection.jpg) | ![Settings Threshold](Screenshots/settings.jpg) | ![Settings Object](Screenshots/settings-2.jpg) |
+
 
 **Features shown above:**
 
