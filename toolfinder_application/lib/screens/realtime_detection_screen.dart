@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import '../models/detection.dart';
 import '../main.dart';
-import '../widgets/realtime_bounding_box_overlay.dart';
+import '../widgets/bounding_box_overlay.dart';
 
 class RealtimeDetectionScreen extends StatefulWidget {
   const RealtimeDetectionScreen({super.key});
@@ -24,6 +24,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
   List<Detection> _currentDetections = [];
   Timer? _detectionTimer;
   String _statusMessage = 'Initializing camera...';
+  String? _currentImagePath;
   
   // Animation controllers for modern effects
   late AnimationController _glowController;
@@ -109,7 +110,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
 
       _cameraController = CameraController(
         _cameras.first,
-        ResolutionPreset.ultraHigh,
+        ResolutionPreset.high,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
@@ -162,6 +163,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
       _isRealtimeActive = false;
       _statusMessage = 'Detection stopped';
       _currentDetections.clear();
+      _currentImagePath = null;
     });
 
     _detectionTimer?.cancel();
@@ -204,16 +206,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
       if (mounted && _isRealtimeActive) {
         setState(() {
           _currentDetections = detections;
+          _currentImagePath = imagePath;
           _statusMessage = detections.isEmpty 
               ? 'Scanning • 30 FPS' 
               : '${detections.length} object${detections.length > 1 ? 's' : ''} detected • 30 FPS';
         });
-      }
-
-      try {
-        await File(imagePath).delete();
-      } catch (e) {
-        // Ignore cleanup errors
       }
 
     } catch (e) {
@@ -315,7 +312,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
                 
                 const SizedBox(height: 16),
                 
-                // Camera Preview
+                // Camera Preview - NATURAL VIDEO WITHOUT COMPRESSION
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -473,7 +470,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
                     if (_isRealtimeActive) ...[
                       const SizedBox(height: 4),
                       Text(
-                        'Ultra-high resolution • Real-time processing',
+                        'High resolution • Real-time processing',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 12,
@@ -508,9 +505,12 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     );
   }
 
+  // FIXED: Natural camera preview without compression - uses cropping instead of scaling
   Widget _buildCameraPreview() {
     if (!_isCameraInitialized) {
       return Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(24),
@@ -542,6 +542,8 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     }
 
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -562,10 +564,10 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
         borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
-            // Camera preview
+            // Camera preview - NATURAL SIZE with cropping (no compression)
             SizedBox.expand(
               child: FittedBox(
-                fit: BoxFit.cover,
+                fit: BoxFit.cover, // This crops instead of scaling/compressing
                 child: SizedBox(
                   width: _cameraController!.value.previewSize!.height,
                   height: _cameraController!.value.previewSize!.width,
@@ -574,11 +576,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
               ),
             ),
             
-            // Bounding Box Overlay
-            if (_isRealtimeActive)
-              RealtimeBoundingBoxOverlay(
+            // Bounding Box Overlay using the SAME overlay as result screen
+            if (_isRealtimeActive && _currentImagePath != null)
+              BoundingBoxOverlay(
+                imagePath: _currentImagePath!,
                 detections: _currentDetections,
-                cameraController: _cameraController!,
               ),
             
             // Processing Indicator

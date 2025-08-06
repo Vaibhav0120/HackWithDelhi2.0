@@ -163,7 +163,7 @@ This mobile interface demonstrates real-time object detection using the trained 
 
 You can try the ToolFinder AI app on your Android device:
 
-🔗 **[📥 Download ToolFinder Release APK](https://github.com/Vaibhav0120/HackWithDelhi2.0/releases/download/v1.2.0/app-release.apk)**
+🔗 **[📥 Download ToolFinder Release APK](https://github.com/Vaibhav0120/HackWithDelhi2.0/releases/download/v1.3.0/app-release.apk)**
 
 > Built with Flutter • ONNX Runtime for mobile inference • Optimized for low-latency object detection
 
