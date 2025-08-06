@@ -1,6 +1,6 @@
-# 🧯 Industrial Safety Object Detection using YOLOv8
+# 🧯 Space Station Tools Object Detection using YOLOv8
 
-This repository contains our solution for the BuildWithIndia 2.0 Hackathon organized by SunHacks, where we trained a YOLOv8 model to detect **Fire Extinguishers**, **Tool Boxes**, and **Oxygen Tanks** in industrial environments using computer vision.
+This repository contains our solution for the BuildWithIndia 2.0 Hackathon organized by SunHacks, where we trained a YOLOv8 model to detect **Fire Extinguishers**, **Tool Boxes**, and **Oxygen Tanks** in Space Station environments using computer vision.
 
 ---
 
