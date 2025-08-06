@@ -29,21 +29,30 @@ class _GlassButtonState extends State<GlassButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  // FIXED: Removed unused _isPressed field
+  late Animation<double> _glowAnimation;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 200),
       vsync: this,
     );
+    
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.95,
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
+    ));
+    
+    _glowAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
     ));
   }
 
@@ -68,7 +77,7 @@ class _GlassButtonState extends State<GlassButton>
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _scaleAnimation,
+      animation: _animationController,
       builder: (context, child) {
         return Transform.scale(
           scale: _scaleAnimation.value,
@@ -77,72 +86,72 @@ class _GlassButtonState extends State<GlassButton>
             onTapUp: _onTapUp,
             onTapCancel: _onTapCancel,
             onTap: widget.onPressed,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(widget.isCompactMode ? 16 : 20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  width: widget.isFullWidth ? double.infinity : null,
-                  padding: EdgeInsets.all(widget.isCompactMode ? 16 : 24),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(widget.isCompactMode ? 16 : 20),
-                    border: Border.all(
-                      color: widget.isPrimary
-                          ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                          : Colors.white.withValues(alpha: 0.2),
-                      width: 1.5,
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: widget.isPrimary
-                          ? [
-                              Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                            ]
-                          : [
-                              Colors.white.withValues(alpha: 0.15),
-                              Colors.white.withValues(alpha: 0.05),
-                            ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.isPrimary
-                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
-                            : Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      ),
-                    ],
+            child: Container(
+              width: widget.isFullWidth ? double.infinity : null,
+              padding: EdgeInsets.all(widget.isCompactMode ? 20 : 24),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(widget.isCompactMode ? 20 : 24),
+                border: Border.all(
+                  color: widget.isPrimary
+                      ? Colors.white.withValues(alpha: 0.3 + (0.2 * _glowAnimation.value))
+                      : Colors.white.withValues(alpha: 0.1 + (0.1 * _glowAnimation.value)),
+                  width: 1,
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: widget.isPrimary
+                      ? [
+                          Colors.white.withValues(alpha: 0.15 + (0.05 * _glowAnimation.value)),
+                          Colors.white.withValues(alpha: 0.08 + (0.02 * _glowAnimation.value)),
+                        ]
+                      : [
+                          Colors.white.withValues(alpha: 0.08 + (0.02 * _glowAnimation.value)),
+                          Colors.white.withValues(alpha: 0.03 + (0.01 * _glowAnimation.value)),
+                        ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 20,
+                    spreadRadius: 2,
                   ),
+                  if (widget.isPrimary)
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.1 * _glowAnimation.value),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(widget.isCompactMode ? 20 : 24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: widget.isCompactMode
                       ? Row(
                           mainAxisSize: widget.isFullWidth ? MainAxisSize.max : MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              width: 40,
-                              height: 40,
+                              width: 48,
+                              height: 48,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    widget.isPrimary
-                                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                                        : Colors.white.withValues(alpha: 0.2),
+                                    Colors.white.withValues(alpha: 0.2),
                                     Colors.transparent,
                                   ],
                                 ),
                               ),
                               child: Icon(
                                 widget.icon,
-                                color: widget.isPrimary
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Colors.white.withValues(alpha: 0.9),
-                                size: 20,
+                                color: Colors.white,
+                                size: 24,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,17 +159,18 @@ class _GlassButtonState extends State<GlassButton>
                                 children: [
                                   Text(
                                     widget.title,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
                                     ),
                                   ),
+                                  const SizedBox(height: 2),
                                   Text(
                                     widget.subtitle,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.white.withValues(alpha: 0.6),
+                                      color: Colors.white.withValues(alpha: 0.7),
                                     ),
                                   ),
                                 ],
@@ -173,25 +183,21 @@ class _GlassButtonState extends State<GlassButton>
                           children: [
                             // Icon Container
                             Container(
-                              width: 60,
-                              height: 60,
+                              width: 72,
+                              height: 72,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    widget.isPrimary
-                                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                                        : Colors.white.withValues(alpha: 0.2),
+                                    Colors.white.withValues(alpha: 0.2),
                                     Colors.transparent,
                                   ],
                                 ),
                               ),
                               child: Icon(
                                 widget.icon,
-                                color: widget.isPrimary
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Colors.white.withValues(alpha: 0.9),
-                                size: 28,
+                                color: Colors.white,
+                                size: 32,
                               ),
                             ),
                             
@@ -200,22 +206,22 @@ class _GlassButtonState extends State<GlassButton>
                             // Title
                             Text(
                               widget.title,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withValues(alpha: 0.9),
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
                               ),
                               textAlign: TextAlign.center,
                             ),
                             
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             
                             // Subtitle
                             Text(
                               widget.subtitle,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white.withValues(alpha: 0.6),
+                                color: Colors.white.withValues(alpha: 0.7),
                               ),
                               textAlign: TextAlign.center,
                             ),

@@ -9,332 +9,412 @@ class SettingsDialog extends StatefulWidget {
   State<SettingsDialog> createState() => _SettingsDialogState();
 }
 
-class _SettingsDialogState extends State<SettingsDialog> {
+class _SettingsDialogState extends State<SettingsDialog> with TickerProviderStateMixin {
   late double _confidenceThreshold;
   late Map<String, bool> _enabledObjects;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _confidenceThreshold = SettingsService.instance.confidenceThreshold;
     _enabledObjects = Map.from(SettingsService.instance.enabledObjects);
+    
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    ));
+    
+    _fadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            // FIXED: Remove scrollable and set fixed constraints
-            constraints: const BoxConstraints(
-              maxHeight: 580,
-              maxWidth: 400,
-            ),
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.15),
-                  Colors.white.withValues(alpha: 0.05),
-                ],
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    Icon(
-                      Icons.tune_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 28,
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Transform.scale(
+            scale: 0.8 + (0.2 * _fadeAnimation.value),
+            child: Opacity(
+              opacity: _fadeAnimation.value,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      maxHeight: 600,
+                      maxWidth: 400,
                     ),
-                    const SizedBox(width: 16),
-                    const Expanded(
-                      child: Text(
-                        'Detection Settings',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        width: 1,
                       ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // FIXED: Non-scrollable content with proper spacing
-                // Confidence Threshold Section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: Colors.white.withValues(alpha: 0.1),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.tune_rounded,
-                            color: Theme.of(context).colorScheme.secondary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Confidence Threshold',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.08),
+                          Colors.white.withValues(alpha: 0.03),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Current: ${(_confidenceThreshold * 100).toInt()}%',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 14,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 30,
+                          spreadRadius: 5,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: Theme.of(context).colorScheme.secondary,
-                          inactiveTrackColor: Colors.white.withValues(alpha: 0.3),
-                          thumbColor: Theme.of(context).colorScheme.secondary,
-                          overlayColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
-                        ),
-                        child: Slider(
-                          value: _confidenceThreshold,
-                          min: 0.3,
-                          max: 0.9,
-                          divisions: 12,
-                          onChanged: (value) {
-                            setState(() {
-                              _confidenceThreshold = value;
-                            });
-                          },
-                        ),
-                      ),
-                      Text(
-                        'Higher = more accurate, fewer detections',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Object Selection Section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: Colors.white.withValues(alpha: 0.1),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.category_rounded,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Objects to Detect',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      // FIXED: Compact object toggles
-                      ..._enabledObjects.entries.map((entry) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              Text(
-                                SettingsService.instance.getObjectIcon(entry.key),
-                                style: const TextStyle(fontSize: 18),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header
+                        Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    Colors.white.withValues(alpha: 0.2),
+                                    Colors.transparent,
+                                  ],
+                                ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  SettingsService.instance.getDisplayName(entry.key),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
+                              child: const Icon(
+                                Icons.tune_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Text(
+                                'Detection Settings',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w300,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Confidence Threshold Section
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.white.withValues(alpha: 0.05),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white.withValues(alpha: 0.1),
+                                    ),
+                                    child: const Icon(
+                                      Icons.tune_rounded,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Confidence Threshold',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Current: ${(_confidenceThreshold * 100).toInt()}%',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SliderTheme(
+                                data: SliderTheme.of(context).copyWith(
+                                  activeTrackColor: Colors.white,
+                                  inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
+                                  thumbColor: Colors.white,
+                                  overlayColor: Colors.white.withValues(alpha: 0.1),
+                                  trackHeight: 4,
+                                ),
+                                child: Slider(
+                                  value: _confidenceThreshold,
+                                  min: 0.3,
+                                  max: 0.9,
+                                  divisions: 12,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _confidenceThreshold = value;
+                                    });
+                                  },
+                                ),
+                              ),
+                              Text(
+                                'Higher = more accurate, fewer detections',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // Object Selection Section
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.white.withValues(alpha: 0.05),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white.withValues(alpha: 0.1),
+                                    ),
+                                    child: const Icon(
+                                      Icons.category_rounded,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Objects to Detect',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              ..._enabledObjects.entries.map((entry) {
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.white.withValues(alpha: 0.03),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.05),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        SettingsService.instance.getObjectIcon(entry.key),
+                                        style: const TextStyle(fontSize: 20),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Text(
+                                          SettingsService.instance.getDisplayName(entry.key),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ),
+                                      Switch(
+                                        value: entry.value,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _enabledObjects[entry.key] = value;
+                                          });
+                                        },
+                                        activeColor: Colors.white,
+                                        activeTrackColor: Colors.white.withValues(alpha: 0.3),
+                                        inactiveThumbColor: Colors.white.withValues(alpha: 0.5),
+                                        inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Action Buttons
+                        Column(
+                          children: [
+                            // Save Button
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  await SettingsService.instance.setConfidenceThreshold(_confidenceThreshold);
+                                  for (final entry in _enabledObjects.entries) {
+                                    await SettingsService.instance.setObjectEnabled(entry.key, entry.value);
+                                  }
+                                  
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Row(
+                                          children: [
+                                            Icon(Icons.check_circle, color: Colors.white, size: 20),
+                                            SizedBox(width: 12),
+                                            Text('Settings saved successfully!'),
+                                          ],
+                                        ),
+                                        backgroundColor: Colors.green,
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        margin: const EdgeInsets.all(16),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  'Save Settings',
+                                  style: TextStyle(
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
-                              Switch(
-                                value: entry.value,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _enabledObjects[entry.key] = value;
-                                  });
+                            ),
+                            
+                            const SizedBox(height: 12),
+                            
+                            // Reset Button
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: TextButton(
+                                onPressed: () async {
+                                  await SettingsService.instance.resetToDefaults();
+                                  if (context.mounted) {
+                                    setState(() {
+                                      _confidenceThreshold = SettingsService.instance.confidenceThreshold;
+                                      _enabledObjects = Map.from(SettingsService.instance.enabledObjects);
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Row(
+                                          children: [
+                                            Icon(Icons.refresh, color: Colors.white, size: 20),
+                                            SizedBox(width: 12),
+                                            Text('Settings reset to defaults'),
+                                          ],
+                                        ),
+                                        backgroundColor: Colors.blue,
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        margin: const EdgeInsets.all(16),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
                                 },
-                                activeColor: Theme.of(context).colorScheme.secondary,
-                                inactiveThumbColor: Colors.grey,
-                                inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white.withValues(alpha: 0.7),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: BorderSide(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                    ),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Reset to Defaults',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
                               ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                
-                const SizedBox(height: 20),
-                
-                // FIXED: Working Save and Reset buttons with proper context handling
-                Column(
-                  children: [
-                    // Save Button (Primary)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          // FIXED: Actually save the settings
-                          await SettingsService.instance.setConfidenceThreshold(_confidenceThreshold);
-                          for (final entry in _enabledObjects.entries) {
-                            await SettingsService.instance.setObjectEnabled(entry.key, entry.value);
-                          }
-                          
-                          // FIXED: Proper context handling
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                            // Show confirmation
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Row(
-                                  children: [
-                                    Icon(Icons.check_circle, color: Colors.white, size: 20),
-                                    SizedBox(width: 12),
-                                    Text('Settings saved successfully!'),
-                                  ],
-                                ),
-                                backgroundColor: Theme.of(context).colorScheme.secondary,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                margin: const EdgeInsets.all(16),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 4,
-                        ),
-                        child: const Text(
-                          'Save Settings',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 10),
-                    
-                    // Reset Button (Secondary)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: TextButton(
-                        onPressed: () async {
-                          // FIXED: Actually reset the settings
-                          await SettingsService.instance.resetToDefaults();
-                          if (context.mounted) {
-                            setState(() {
-                              _confidenceThreshold = SettingsService.instance.confidenceThreshold;
-                              _enabledObjects = Map.from(SettingsService.instance.enabledObjects);
-                            });
-                            // Show confirmation
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Row(
-                                  children: [
-                                    Icon(Icons.refresh, color: Colors.white, size: 20),
-                                    SizedBox(width: 12),
-                                    Text('Settings reset to defaults'),
-                                  ],
-                                ),
-                                backgroundColor: Theme.of(context).colorScheme.primary,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                margin: const EdgeInsets.all(16),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.white.withValues(alpha: 0.8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                          ),
-                        ),
-                        child: const Text(
-                          'Reset to Defaults',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

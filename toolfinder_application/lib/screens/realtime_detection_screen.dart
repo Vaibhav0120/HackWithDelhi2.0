@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import '../models/detection.dart';
 import '../main.dart';
 import '../widgets/realtime_bounding_box_overlay.dart';
-import '../widgets/glass_button.dart';
 
 class RealtimeDetectionScreen extends StatefulWidget {
   const RealtimeDetectionScreen({super.key});
@@ -16,7 +16,7 @@ class RealtimeDetectionScreen extends StatefulWidget {
 }
 
 class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, TickerProviderStateMixin {
   CameraController? _cameraController;
   late List<CameraDescription> _cameras;
   bool _isCameraInitialized = false;
@@ -25,20 +25,37 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
   Timer? _detectionTimer;
   String _statusMessage = 'Initializing camera...';
   
-  // FIXED: Ultra-high FPS settings with optimized processing
+  // Animation controllers for modern effects
+  late AnimationController _glowController;
+  late AnimationController _particleController;
+  late List<Particle> _particles;
+  
   final List<String> _imageQueue = [];
   bool _isProcessing = false;
   int _frameSkipCounter = 0;
   
-  // FIXED: 30 FPS for ultra-smooth detection
   static const int _maxQueueSize = 1;
-  static const int _frameSkipRate = 1; // Process every frame
-  static const int _detectionInterval = 33; // 33ms = 30 FPS
+  static const int _frameSkipRate = 1;
+  static const int _detectionInterval = 33; // 30 FPS
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    
+    // Initialize animations
+    _glowController = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _particleController = AnimationController(
+      duration: const Duration(seconds: 8),
+      vsync: this,
+    )..repeat();
+    
+    _particles = List.generate(15, (index) => Particle());
+    
     _initializeCamera();
   }
 
@@ -47,6 +64,8 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     WidgetsBinding.instance.removeObserver(this);
     _detectionTimer?.cancel();
     _cameraController?.dispose();
+    _glowController.dispose();
+    _particleController.dispose();
     _cleanupImageQueue();
     super.dispose();
   }
@@ -88,10 +107,9 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
         return;
       }
 
-      // FIXED: Ultra-high resolution for best quality
       _cameraController = CameraController(
         _cameras.first,
-        ResolutionPreset.ultraHigh, // Maximum resolution
+        ResolutionPreset.ultraHigh,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
@@ -102,7 +120,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
         setState(() {
           _isCameraInitialized = true;
           _statusMessage = ModelManager.instance.isPreloaded 
-              ? 'Ready for ultra-high-speed detection' 
+              ? 'Ready for detection' 
               : 'Neural network loading...';
         });
       }
@@ -119,7 +137,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     if (!_isCameraInitialized || !ModelManager.instance.isPreloaded) {
       _showSnackBar(
         'Camera or neural network not ready',
-        Theme.of(context).colorScheme.tertiary,
+        Colors.orange,
         Icons.warning_rounded,
       );
       return;
@@ -127,12 +145,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
 
     setState(() {
       _isRealtimeActive = true;
-      _statusMessage = 'Ultra-high-speed detection active • 30 FPS';
+      _statusMessage = 'Live detection active • 30 FPS';
       _imageQueue.clear();
       _frameSkipCounter = 0;
     });
 
-    // FIXED: Ultra-high FPS detection rate
     _detectionTimer = Timer.periodic(const Duration(milliseconds: _detectionInterval), (timer) {
       if (_isRealtimeActive) {
         _captureAndProcess();
@@ -153,16 +170,13 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     _isProcessing = false;
   }
 
-  // FIXED: Ultra-optimized for 30 FPS with no pausing
   Future<void> _captureAndProcess() async {
     if (!_isCameraInitialized || !_isRealtimeActive || _isProcessing) return;
 
-    // FIXED: Process every frame for maximum smoothness
     _frameSkipCounter++;
     if (_frameSkipCounter < _frameSkipRate) return;
     _frameSkipCounter = 0;
 
-    // FIXED: Minimal queue for instant processing
     if (_imageQueue.length >= _maxQueueSize) {
       final oldImage = _imageQueue.removeAt(0);
       try {
@@ -174,13 +188,8 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
 
     try {
       _isProcessing = true;
-      
-      // FIXED: Ultra-fast capture with no blocking
       final image = await _cameraController!.takePicture();
-      
-      // FIXED: Immediate processing for no delays
       _processImageAsync(image.path);
-      
     } catch (e) {
       // Silently handle capture errors
     } finally {
@@ -188,22 +197,19 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     }
   }
 
-  // FIXED: Async processing to prevent camera pausing
   void _processImageAsync(String imagePath) async {
     try {
-      // FIXED: Process in background without blocking camera
       final detections = await ModelManager.instance.getInference().runInference(imagePath);
       
       if (mounted && _isRealtimeActive) {
         setState(() {
           _currentDetections = detections;
           _statusMessage = detections.isEmpty 
-              ? 'Ultra-high-speed scanning • 30 FPS' 
+              ? 'Scanning • 30 FPS' 
               : '${detections.length} object${detections.length > 1 ? 's' : ''} detected • 30 FPS';
         });
       }
 
-      // Immediate cleanup for ultra-high FPS
       try {
         await File(imagePath).delete();
       } catch (e) {
@@ -213,11 +219,10 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _statusMessage = 'Detection processing • 30 FPS';
+          _statusMessage = 'Processing • 30 FPS';
         });
       }
       
-      // Clean up on error
       try {
         await File(imagePath).delete();
       } catch (e) {
@@ -251,18 +256,24 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Live Detection'),
+        title: const Text(
+          'Live Detection',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w300,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded),
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
           onPressed: () {
             _stopRealtimeDetection();
             Navigator.pop(context);
           },
         ),
-        // FIXED: Removed settings button from live detection
         actions: [
           if (_isRealtimeActive && _currentDetections.isNotEmpty)
             Padding(
@@ -271,16 +282,16 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                      color: Colors.white.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Text(
                     '${_currentDetections.length} FOUND',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.secondary,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 10,
                     ),
@@ -290,133 +301,209 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
             ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0B0E1A),
-              Color(0xFF1A1A2E),
-              Color(0xFF16213E),
-              Color(0xFF0F3460),
-            ],
-            stops: [0.0, 0.3, 0.7, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Enhanced Status Bar
-              _buildStatusBar(),
-              
-              const SizedBox(height: 16),
-              
-              // Camera Preview with Overlay
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _buildCameraPreview(),
+      body: Stack(
+        children: [
+          // Animated background effects
+          _buildBackgroundEffects(),
+          
+          // Main content
+          SafeArea(
+            child: Column(
+              children: [
+                // Status Bar
+                _buildStatusBar(),
+                
+                const SizedBox(height: 16),
+                
+                // Camera Preview
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _buildCameraPreview(),
+                  ),
                 ),
-              ),
-              
-              const SizedBox(height: 20),
-              
-              // Control Buttons
-              _buildControlButtons(),
-              
-              const SizedBox(height: 20),
-            ],
+                
+                const SizedBox(height: 20),
+                
+                // Control Button
+                _buildControlButton(),
+                
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildBackgroundEffects() {
+    return Stack(
+      children: [
+        // Floating particles
+        AnimatedBuilder(
+          animation: _particleController,
+          builder: (context, child) {
+            return Stack(
+              children: _particles.map((particle) {
+                final progress = _particleController.value;
+                final yOffset = math.sin(progress * 2 * math.pi + particle.phase) * 30;
+                
+                return Positioned(
+                  left: particle.x * MediaQuery.of(context).size.width,
+                  top: particle.y * MediaQuery.of(context).size.height + yOffset,
+                  child: Container(
+                    width: 3,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+        
+        // Glow effects
+        AnimatedBuilder(
+          animation: _glowController,
+          builder: (context, child) {
+            return Stack(
+              children: [
+                Positioned(
+                  top: MediaQuery.of(context).size.height * 0.3,
+                  left: -100,
+                  child: Container(
+                    width: 300,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          Colors.blue.withValues(alpha: 0.03 * _glowController.value),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: MediaQuery.of(context).size.height * 0.2,
+                  right: -100,
+                  child: Container(
+                    width: 250,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          Colors.purple.withValues(alpha: 0.03 * (1 - _glowController.value)),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 
   Widget _buildStatusBar() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: Colors.black.withValues(alpha: 0.3),
+        color: Colors.white.withValues(alpha: 0.05),
         border: Border.all(
           color: _isRealtimeActive 
-              ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
-              : Colors.white.withValues(alpha: 0.2),
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.1),
         ),
       ),
-      child: Row(
-        children: [
-          // Status Indicator
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _isRealtimeActive 
-                  ? Theme.of(context).colorScheme.secondary
-                  : _isCameraInitialized && ModelManager.instance.isPreloaded
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.grey,
-              boxShadow: _isRealtimeActive ? [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                  blurRadius: 8,
-                  spreadRadius: 2,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Row(
+            children: [
+              // Status Indicator
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _isRealtimeActive 
+                      ? Colors.green
+                      : _isCameraInitialized && ModelManager.instance.isPreloaded
+                          ? Colors.blue
+                          : Colors.grey,
+                  boxShadow: _isRealtimeActive ? [
+                    BoxShadow(
+                      color: Colors.green.withValues(alpha: 0.6),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                    ),
+                  ] : null,
                 ),
-              ] : null,
-            ),
-          ),
-          
-          const SizedBox(width: 12),
-          
-          // Status Text
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _statusMessage,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+              ),
+              
+              const SizedBox(width: 16),
+              
+              // Status Text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _statusMessage,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    if (_isRealtimeActive) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Ultra-high resolution • Real-time processing',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              
+              // Detection Count Badge
+              if (_currentDetections.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-                if (_isRealtimeActive) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'Ultra-high resolution • Real-time processing',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
+                  child: Text(
+                    '${_currentDetections.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
-          
-          // Detection Count Badge
-          if (_currentDetections.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${_currentDetections.length}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
                 ),
-              ),
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -425,23 +512,27 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     if (!_isCameraInitialized) {
       return Container(
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.5),
+          color: Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withValues(alpha: 0.1),
           ),
         ),
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
+              CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
               SizedBox(height: 16),
               Text(
-                'Initializing Ultra-High-Speed Camera...',
+                'Initializing Camera...',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
+                  fontWeight: FontWeight.w300,
                 ),
               ),
             ],
@@ -455,13 +546,13 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 25,
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 30,
             offset: const Offset(0, 15),
           ),
           if (_isRealtimeActive)
             BoxShadow(
-              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+              color: Colors.green.withValues(alpha: 0.2),
               blurRadius: 40,
               spreadRadius: 5,
             ),
@@ -483,28 +574,28 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
               ),
             ),
             
-            // FIXED: Improved Bounding Box Overlay with better positioning
+            // Bounding Box Overlay
             if (_isRealtimeActive)
               RealtimeBoundingBoxOverlay(
                 detections: _currentDetections,
                 cameraController: _cameraController!,
               ),
             
-            // Processing Indicator (smaller and less intrusive)
+            // Processing Indicator
             if (_isProcessing)
               Positioned(
                 top: 16,
                 right: 16,
                 child: Container(
-                  width: 6,
-                  height: 6,
+                  width: 8,
+                  height: 8,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary,
+                    color: Colors.green,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                        blurRadius: 3,
+                        color: Colors.green.withValues(alpha: 0.6),
+                        blurRadius: 4,
                         spreadRadius: 1,
                       ),
                     ],
@@ -522,11 +613,11 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.4),
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                       ),
                       child: Text(
                         _currentDetections.isEmpty 
@@ -535,7 +626,7 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -548,29 +639,75 @@ class _RealtimeDetectionScreenState extends State<RealtimeDetectionScreen>
     );
   }
 
-  Widget _buildControlButtons() {
+  Widget _buildControlButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          // Start/Stop Button (Full width, no settings button)
-          Expanded(
-            child: GlassButton(
-              onPressed: _isCameraInitialized && ModelManager.instance.isPreloaded
-                  ? (_isRealtimeActive ? _stopRealtimeDetection : _startRealtimeDetection)
-                  : () {},
-              icon: _isRealtimeActive ? Icons.stop_rounded : Icons.play_arrow_rounded,
-              title: _isRealtimeActive ? 'Stop Detection' : 'Start Detection',
-              subtitle: _isRealtimeActive 
-                  ? 'End ultra-high-speed scan'
-                  : 'Begin 30 FPS detection',
-              isFullWidth: true,
-              isCompactMode: true,
-              isPrimary: true,
+      child: SizedBox(
+        width: double.infinity,
+        height: 64,
+        child: ElevatedButton(
+          onPressed: _isCameraInitialized && ModelManager.instance.isPreloaded
+              ? (_isRealtimeActive ? _stopRealtimeDetection : _startRealtimeDetection)
+              : null,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _isRealtimeActive 
+                ? Colors.red.withValues(alpha: 0.1)
+                : Colors.white.withValues(alpha: 0.1),
+            foregroundColor: _isRealtimeActive ? Colors.red : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: _isRealtimeActive 
+                    ? Colors.red.withValues(alpha: 0.3)
+                    : Colors.white.withValues(alpha: 0.2),
+              ),
             ),
+            elevation: 0,
           ),
-        ],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _isRealtimeActive ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _isRealtimeActive ? 'Stop Detection' : 'Start Detection',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    _isRealtimeActive 
+                        ? 'End live scan'
+                        : 'Begin 30 FPS detection',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: (_isRealtimeActive ? Colors.red : Colors.white).withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+class Particle {
+  final double x;
+  final double y;
+  final double phase;
+
+  Particle()
+      : x = math.Random().nextDouble(),
+        y = math.Random().nextDouble(),
+        phase = math.Random().nextDouble() * 2 * math.pi;
 }

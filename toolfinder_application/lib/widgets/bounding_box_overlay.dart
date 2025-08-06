@@ -1,9 +1,10 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import '../models/detection.dart';
 
-class BoundingBoxOverlay extends StatelessWidget {
+class BoundingBoxOverlay extends StatefulWidget {
   final String imagePath;
   final List<Detection> detections;
 
@@ -12,6 +13,38 @@ class BoundingBoxOverlay extends StatelessWidget {
     required this.imagePath,
     required this.detections,
   });
+
+  @override
+  State<BoundingBoxOverlay> createState() => _BoundingBoxOverlayState();
+}
+
+class _BoundingBoxOverlayState extends State<BoundingBoxOverlay>
+    with TickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _pulseAnimation = Tween<double>(
+      begin: 0.7,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,13 +59,12 @@ class BoundingBoxOverlay extends StatelessWidget {
         
         return LayoutBuilder(
           builder: (context, constraints) {
-            // Calculate the actual display size of the image
             final containerSize = Size(constraints.maxWidth, constraints.maxHeight);
             final displaySize = _calculateDisplaySize(imageSize, containerSize);
             final offset = _calculateOffset(displaySize, containerSize);
 
             return Stack(
-              children: detections.map((detection) {
+              children: widget.detections.map((detection) {
                 return _buildBoundingBox(detection, imageSize, displaySize, offset, context);
               }).toList(),
             );
@@ -43,7 +75,7 @@ class BoundingBoxOverlay extends StatelessWidget {
   }
 
   Future<Size> _getImageSize() async {
-    final imageFile = File(imagePath);
+    final imageFile = File(widget.imagePath);
     final imageBytes = await imageFile.readAsBytes();
     final image = img.decodeImage(imageBytes);
     
@@ -59,13 +91,11 @@ class BoundingBoxOverlay extends StatelessWidget {
     final containerAspectRatio = containerSize.width / containerSize.height;
 
     if (imageAspectRatio > containerAspectRatio) {
-      // Image is wider than container
       return Size(
         containerSize.width,
         containerSize.width / imageAspectRatio,
       );
     } else {
-      // Image is taller than container
       return Size(
         containerSize.height * imageAspectRatio,
         containerSize.height,
@@ -87,7 +117,6 @@ class BoundingBoxOverlay extends StatelessWidget {
     Offset offset,
     BuildContext context,
   ) {
-    // FIXED: Scale coordinates properly and clamp to prevent overflow
     final scaleX = displaySize.width / imageSize.width;
     final scaleY = displaySize.height / imageSize.height;
 
@@ -99,62 +128,87 @@ class BoundingBoxOverlay extends StatelessWidget {
     final width = (right - left).clamp(0.0, displaySize.width);
     final height = (bottom - top).clamp(0.0, displaySize.height);
 
-    // Skip invalid boxes
     if (width <= 0 || height <= 0) {
       return const SizedBox.shrink();
     }
 
     final color = _getClassColor(detection.classId);
 
-    return Positioned(
-      left: left,
-      top: top,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: color,
-            width: 2.5,
-          ),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Stack(
-          children: [
-            // Label background
-            Positioned(
-              top: -2,
-              left: -2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    bottomRight: Radius.circular(4),
-                  ),
-                ),
-                child: Text(
-                  '${detection.className} ${(detection.confidence * 100).toInt()}%',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Positioned(
+          left: left,
+          top: top,
+          child: Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: color.withValues(alpha: _pulseAnimation.value),
+                width: 3.0,
               ),
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.4 * _pulseAnimation.value),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+            child: Stack(
+              children: [
+                // Enhanced label with glassmorphism
+                Positioned(
+                  top: -4,
+                  left: -4,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: color.withValues(alpha: 0.6),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          '${detection.className} ${(detection.confidence * 100).toInt()}%',
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.8),
+                                offset: const Offset(1, 1),
+                                blurRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Color _getClassColor(int classId) {
     const colors = [
-      Color(0xFFFF7675), // FireExtinguisher - Mars red
-      Color(0xFF6C5CE7), // ToolBox - Space purple  
-      Color(0xFF00CEC9), // OxygenTank - Cosmic teal
+      Color(0xFFFF6B6B), // FireExtinguisher - Bright red
+      Color(0xFF4ECDC4), // ToolBox - Cyan  
+      Color(0xFF45B7D1), // OxygenTank - Blue
     ];
     return colors[classId % colors.length];
   }
