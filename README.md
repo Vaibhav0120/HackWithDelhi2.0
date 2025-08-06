@@ -117,7 +117,6 @@ runs/detect/train/weights/best.onnx  ✅
 
 This repo is designed to integrate the exported ONNX model (`best.onnx`) into a mobile app using **Flutter**.
 
-Flutter + ONNX support is still evolving, but you can use it with the help of:
 
 ---
 
