@@ -26,7 +26,9 @@ Parth Garg – 2300300100120@ipec.org.in
 
 ## 🚀 Project Overview
 
-The aim of this project is to ensure workplace safety using real-time object detection of essential equipment. By leveraging YOLOv8 and ONNX, our solution can run across various platforms — and is optimized for Flutter (mobile) integration.
+Design a computer vision object detection model that can help
+automate tasks in space environments by enabling robots to visually
+identify and locate essential tools during missions.
 
 ### 📌 Objects Detected:
 - 🔥 Fire Extinguisher
