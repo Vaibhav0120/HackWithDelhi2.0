@@ -74,7 +74,7 @@ HackWithDelhi2.0/
 ┣ 📜 train.py           ← 🔁 Training script (alternative to notebook)
 ┣ 📜 predict.py
 ┣ 📜 visualize.py       ← used for metrics/image display
-┣ 📜 yolo_params.yaml   ← Config file if used
+┣ 📜 yolo_params.yaml   ← Config file
 ┣ 📜 yolov8m.pt         ← Trained model weights
 ┣ 📜 best.onnx          ← Model Exported as ONNX
 ┣ 📜 BuildWithDelhi2.0_Report.pdf ← Final report
