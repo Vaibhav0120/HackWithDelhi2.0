@@ -89,6 +89,8 @@ HackWithDelhi2.0/
 The dataset used in this project is not included in this GitHub repo due to its size (~3.9 GB).  
 Please download it from the official source:
 
+862 Training Image | 154 Testing Image
+
 🔗 **[Download from Duality (Account Required)](https://falcon.duality.ai/secure/documentation/hackathon?utm_source=hackathon&utm_medium=instructions&utm_campaign=sunhacks)**
 
 ### 📂 After Downloading:
